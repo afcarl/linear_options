@@ -2,10 +2,11 @@
 #include <Eigen/Core>
 
 IntraOptionLearner::IntraOptionLearner(int numactions, float gamma,
-                   float initialvalue, float alpha, float ep,
+                   float initialvalue, float alpha, float ep, rl::state_abstraction stateAbtraction,  
                    Random rng):
   numactions(numactions), gamma(gamma),
   initialvalue(initialvalue), alpha(alpha),
+  stateAbstraction(stateAbstraction),
   rng(rng)
 {
 
@@ -31,7 +32,9 @@ int IntraOptionLearner::next_action(float r, const std::vector<float> &s) {
     std::cout << "Next: got reward " << r << " in state: ";
     std::cout << endl;
   }
-
+  
+   
+  
   return 0;
 }
 

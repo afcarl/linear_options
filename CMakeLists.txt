@@ -45,8 +45,8 @@ rosbuild_add_library(linearoptionlib
 )
 
 
-#rosbuild_add_executable(agent
-#  src/agent.cpp
-#)
+rosbuild_add_executable(run_experiment
+  src/ContinuousRoomExperiment.cc
+)
 
-#target_link_libraries(agent linearoptionlib)
+target_link_libraries(run_experiment linearoptionlib)

@@ -8,6 +8,8 @@
 #include <rl_common/Random.h>
 #include <rl_common/core.hh>
 
+#include <linear_options/StateAbstraction.hh>
+
 /**
  * Intra-Option learning with or without model learning. 
  */
@@ -21,7 +23,7 @@ public:
       \param epsilon The probability of taking a random action
       \param rng Initial state of the random number generator to use */
   IntraOptionLearner(int numactions, float gamma,
-	   float initialvalue, float alpha, float epsilon,
+	   float initialvalue, float alpha, float epsilon, rl::state_abstraction stateAbstract = rl::no_abstraction(), 
 	   Random rng = Random());
 
   /** Unimplemented copy constructor: internal state cannot be simply
@@ -48,7 +50,10 @@ private:
   const float initialvalue;
   const float alpha;
 
+  rl::state_abstraction stateAbstraction;
+
   Random rng;
+
 
   bool ACTDEBUG;
 };
