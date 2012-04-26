@@ -4,7 +4,10 @@
 #include <Eigen/Core>
 
 namespace rl {
-    typedef std::unary_function<Eigen::VectorXd, Eigen::VectorXd> state_abstraction;
+    struct state_abstraction : public std::unary_function<Eigen::VectorXd, Eigen::VectorXd> 
+    {
+        Eigen::VectorXd operator()(const Eigen::VectorXd& s) { return s; };
+    };
 
     struct no_abstraction : public state_abstraction
     {
