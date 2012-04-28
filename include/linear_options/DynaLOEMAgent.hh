@@ -11,6 +11,10 @@ namespace rl {
 class DynaLOEMAgent : public LOEMAgent
 {
 public:
+    DynaLOEMAgent();
+
+    ~DynaLOEMAgent();
+
     /**
      * @Override
      */
@@ -31,16 +35,21 @@ public:
      */
     void setDebug(bool d);
 
-    DynaLOEMAgent();
-
-    ~DynaLOEMAgent();
-
 protected:    
-    // We maintain one LOEM model for every option
-    std::vector<LOEMModel> optionModels;  
+    /**
+     * Return the action with the highest return max_o Q(s, O)
+     * @param phi The n-dimensional projection of a state
+     * @param the LinearOption of maximum value
+     */
+    LinearOption& getBestAction(const Eigen::VectorXd phi);
 
     // Last action executed
-    int lastAction;
+    LinearOption& lastAction;
+
+    Eigen::VectorXd lastState;
+
+    // Last state visited
+    Eigen::VectorXd lastState;
 };
 
 }

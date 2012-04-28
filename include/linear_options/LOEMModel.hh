@@ -11,6 +11,8 @@ namespace rl {
  *
  * TODO MDPModel is not general enough for subclassing. 
  */
+namespace rl {
+
 class LOEMModel
 {  
 public:
@@ -40,12 +42,6 @@ private:
 
     // Reward model
     EigenVectorXd b;
-
-    // Covariance for transition model (RLS)
-    Eigen::MatrixXd P;
-
-    // Covariance for reward model (RLS)
-    Eigen::MatrixXd C;
 };
 
 }
