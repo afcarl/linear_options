@@ -1,7 +1,16 @@
 #include <linear_options/SMDPAgent.hh>
+#include <linear_options/StateAbstraction.hh>
+#include <linear_options/Option.hh>
 
 #include <fstream>
 #include <iomanip>
+#include <vector>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -10,9 +19,14 @@ namespace rl {
 class LOEMAgent : public SMDPAgent
 {
 public:
-    LOEMAgent(rl::state_abstraction& stateAbstraction) : 
-        stateAbstraction(&stateAbstraction) {};
-
+    LOEMAgent(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, Random rng) : 
+        numActions(numActions), 
+        alpha(alpha),
+        epsilon(epsilon),
+        gamma(gamma),
+        stateAbstraction(&stateAbstraction),
+        rng(rng)
+    {};
     virtual ~LOEMAgent() {};
 
     /**
@@ -28,7 +42,7 @@ public:
     /**
      * @Override
      */
-    void loadOptions(conss std::string& filename);
+    void loadOptions(const std::string& filename)
     {
         std::ifstream ifs(filename, std::ios::binary);
         boost::archive::text_iarchive ia(ifs);
@@ -48,6 +62,13 @@ protected:
     // Contains the linear options loaded from disk
     std::vector<LinearOption> options;
 
+    unsigned numActions;
+    double alpha;
+    double epsilon;
+    double gamma;
+    rl::state_abstraction* stateAbstraction;
+    Random rng;
+
 private:
     friend class boost::serialization::access;
     template<class Archive>
@@ -56,7 +77,6 @@ private:
         ar & options;
     }
 
-    rl::state_abstraction* stateAbstraction;
 };
 
 }

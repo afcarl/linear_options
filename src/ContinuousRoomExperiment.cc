@@ -1,4 +1,4 @@
-#include <linear_options/IntraOptionLearner.hh>
+#include <linear_options/DynaLOEMAgent.hh>
 #include <linear_options/StateAbstraction.hh>
 
 #include <Eigen/Core>
@@ -37,6 +37,14 @@ int main(void)
 
     Eigen::VectorXd s(3);
     s << 1.5, 1.2, 15;
+
+    std::vector<float> test(3);
+    test[0] = 1.5;
+    test[1] = 1.2;
+    test[2] = 15;
+    std::vector<double> test2(test.begin(), test.end());
+
+    Eigen::Map<Eigen::VectorXd>(&test2[0], test2.size()); 
 
     auto phi = abstraction(s);
     std::cout << phi;

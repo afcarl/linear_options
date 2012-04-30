@@ -34,7 +34,17 @@ struct LinearOption : public Option
      * @param s The n-dimensional feature vector. 
      * @return The probability of termination given a feature vector
      */
-    virtual double terminate(const Eigen::VectorXd& s);
+    virtual double beta(const Eigen::VectorXd& s) { return 1; }
+
+    /**
+     * Returns the best action to choose in every state
+     * @param phi The current state
+     * @return The best action to choose from state phi
+     */
+    virtual int policy(const Eigen::VectorXd& phi) { 
+        // FIXME
+        return 1;
+    }
 
     // The option's parameter vector that we are learning
     Eigen::VectorXd theta;
@@ -60,60 +70,68 @@ private:
 namespace boost {
 namespace serialization {
 
-// Serialization for Eigen::VectorXd
-template <class Archive>
-void save(Archive &ar, const Eigen::VectorXd &cb, unsigned int)
+// MatrixXd
+template<class Archive>
+void load( Archive & ar,
+           Eigen::MatrixXd & t,
+           const unsigned int file_version )
 {
-    std::size_t nrows = cb.rows();
-    ar << nrows;
-    for (unsigned int i = 0; i < (unsigned int)cb.rows(); ++i) {
-        ar << cb(i);
-    }
+    int n0;
+    ar >> BOOST_SERIALIZATION_NVP(n0);
+    int n1;
+    ar >> BOOST_SERIALIZATION_NVP(n1);
+    t.resize( n0, n1 );
+    ar >> make_array(t.data(), t.rows()*t.cols());
+}
+template<typename Archive>
+void save( Archive & ar,
+           const Eigen::MatrixXd & t,
+           const unsigned int file_version )
+{
+    int n0 = t.rows();
+    ar << BOOST_SERIALIZATION_NVP(n0);
+    int n1 = t.cols();
+    ar << BOOST_SERIALIZATION_NVP(n1);
+    ar << boost::serialization::make_array(t.data(),
+                                           t.rows()*t.cols());
+}
+template<class Archive>
+void serialize( Archive & ar,
+                Eigen::MatrixXd& t,
+                const unsigned int file_version )
+{
+    split_free(ar, t, file_version);
 }
 
-template <class Archive>
-void load(Archive &ar, Eigen::VectorXd &cb, unsigned int)
+// Eigen::VectorXd
+template<class Archive>
+void load( Archive & ar,
+           Eigen::VectorXd & t,
+           const unsigned int file_version )
 {
-    std::size_t rows;
-    ar >> rows;
-    cb.resize(rows);
-    for (unsigned int i = 0; i < (unsigned int)cb.rows(); ++i) {
-        ar >> cb(i);
-    }
+    int n0;
+    ar >> BOOST_SERIALIZATION_NVP(n0);
+    t.resize( n0 );
+    ar >> make_array(t.data(), t.size());
 }
-
-BOOST_SERIALIZATION_SPLIT_FREE(Eigen::VectorXd);
-
-// Serialization code for Eigen::MatrixXd
-template <class Archive>
-void save(Archive &ar, const Eigen::MatrixXd &cb, unsigned int)
+template<typename Archive>
+void save( Archive & ar,
+           const Eigen::VectorXd & t,
+           const unsigned int file_version )
 {
-    std::size_t nrows = cb.rows(), ncols = cb.cols();
-    ar << nrows;
-    ar << ncols;
-    for (unsigned int i = 0; i < (unsigned int)cb.rows(); ++i) {
-        for (unsigned int j = 0; j < (unsigned int)cb.cols(); ++j) {
-            ar << cb(i,j);
-         }
-     }
+    int n0 = t.size();
+    ar << BOOST_SERIALIZATION_NVP(n0);
+    ar << boost::serialization::make_array(t.data(),
+                                           t.size());
 }
-template <class Archive>
-void load(Archive &ar, Eigen::MatrixXd &cb, unsigned int)
+template<class Archive>
+void serialize( Archive & ar,
+                Eigen::VectorXd& t,
+                const unsigned int file_version )
 {
-    std::size_t rows, cols;
-    ar >> rows;
-    ar >> cols;
-    cb.resize(rows,cols);
-    for (unsigned int i = 0; i < (unsigned int)cb.rows(); ++i) {
-        for (std::size_t j = 0; j < (unsigned int)cb.cols(); ++j) {
-            ar >> cb(i,j);
-        }
-    }
+    split_free(ar, t, file_version);
 }
-BOOST_SERIALIZATION_SPLIT_FREE(Eigen::MatrixXd);
 
 } // namespace serialization
 } // namespace boost
-
-
 #endif

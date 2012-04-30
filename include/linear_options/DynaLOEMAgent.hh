@@ -11,8 +11,7 @@ namespace rl {
 class DynaLOEMAgent : public LOEMAgent
 {
 public:
-    DynaLOEMAgent();
-
+     DynaLOEMAgent();
     ~DynaLOEMAgent();
 
     /**
@@ -37,19 +36,47 @@ public:
 
 protected:    
     /**
+     * Choose the best action with probability 1-epsilon, random with epsilon
+     * @param phi The current state in the projected n-d space
+     * @param The index of the primitive action to execute 
+     */
+    int epsilonGreedy(const Eigen::VectorXd& phi);
+
+    /**
      * Return the action with the highest return max_o Q(s, O)
      * @param phi The n-dimensional projection of a state
      * @param the LinearOption of maximum value
      */
-    LinearOption& getBestAction(const Eigen::VectorXd phi);
+    LinearOption& getBestOption(const Eigen::VectorXd& phi);
+
+    // Last option executed
+    LinearOption& lastOption;
 
     // Last action executed
-    LinearOption& lastAction;
-
-    Eigen::VectorXd lastState;
+    int lastAction;
 
     // Last state visited
     Eigen::VectorXd lastState;
+
+    LinearOption& currentOption;
+
+    // Maximum value for next state from s
+    struct NextStateValueComparator {
+        NextStateValueComparator(const Eigen::VectorXd& phi) : phi(phi) {}
+        bool operator() (const LinearOption& a, const LinearOption& b) { 
+            return a.theta.transpose()*a.F*phi < b.theta.transpose()*b.F*phi;     
+        }
+        const Eigen::VectorXd& phi;
+    };
+
+    // Choose new option according to main behavior policy 
+    struct ValueComparator {
+        ValueComparator(const Eigen::VectorXd& phi) : phi(phi) {}
+        bool operator() (const LinearOption& a, const LinearOption& b) { 
+            return a.theta.transpose()*phi < b.theta.transpose()*phi;     
+        }
+        const Eigen::VectorXd& phi;
+    };
 };
 
 }

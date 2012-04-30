@@ -1,30 +1,29 @@
 #include <linear_options/DynaLOEMAgent.hh>
+#include <algorithm>
+
+using namespace rl;
 
 int DynaLOEMAgent::epsilonGreedy(const Eigen::VectorXd& phi)
 {
     // Epsilon-greedy action selection
-    int nextAction = (rng.uniform() < epsilon)? rng.uniformDiscrete(0, numActions-1) : getBestActions(phi);
-    lastAction = nextAction;
+    // FIXME 
+    int nextAction = (rng.uniform() < epsilon) ? rng.uniformDiscrete(0, numActions-1) : 1;
+    //lastAction = nextAction;
     lastState = phi;
 
     return nextAction;
 }
 
-LinearOption& DynaLOEMAgent::getBestAction(const Eigen::VectorXd s)
+LinearOption& DynaLOEMAgent::getBestOption(const Eigen::VectorXd& phi)
 {
     // Follow option's policy if currently executing
-    if (!currentOption.terminate(phi)) {
-        return currentOption.policy(phi);
+    if (!currentOption.beta(phi)) {
+        // TODO FIXME
+        //return currentOption.policy(phi);
     }
 
-    // Choose new option according to maini behavior policy 
-    struct ValueComparator {
-        bool operator() (const LinearOption& a, const LinearOption& b) { 
-            return a.theta.tranpose()*s < b.theta.tranpose()*s;     
-        }
-    } comp;
-
-    currentOption = std::max_element(options.begin(), options.end(), comp); 
+    ValueComparator comp(phi);
+    currentOption = *std::max_element(options.begin(), options.end(), comp); 
 
     return currentOption;
 }
@@ -40,32 +39,25 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
     auto phi = project(s); 
 
     // Model parameters of the last executed action 
-    Eigen::VectorXd& theta = options[lastAction].model; 
-    Eigen::VectorXd& b = options[lastAction].b;
-    Eigen::MatrixXd& F = options[lastAction].F;
+    Eigen::VectorXd& theta = lastOption.theta; 
+    Eigen::VectorXd& b = lastOption.b;
+    Eigen::MatrixXd& F = lastOption.F;
 
     // Intra-Option Learning update
     // Update every consistent option for which u(phi) = a
     for (auto it = options.begin(); it != options.end(); it++) {
-        if (it->policy(phi) === lastAction) {
-            Eigen::VectorXd& thetaOption = (*it);
-
-            double U = (1 - it->beta(phi))*thetaOption.transpose()*phi + it->beta(phi)*getBestAction(phi).theta.tranpose()*phi; 
+        if (it->policy(phi) == lastAction) {
+            Eigen::VectorXd& thetaOption = it->theta;
+            double U = (1 - it->beta(phi))*thetaOption.dot(phi) + it->beta(phi)*getBestOption(phi).theta.dot(phi);
             thetaOption = thetaOption + alpha*(r + gamma*U - thetaOption.transpose()*phi)*phi;
         }
     }
 
     // Execute one planning update 
-    // Maximum value for next state from s
-    struct NextStateValueComparator {
-        bool operator() (const LinearOption& a, const LinearOption& b) { 
-            return a.theta.tranpose()*a.F*phi < b.theta.tranpose()*b.F*phi;     
-        }
-    } comp;
-
-    LinearOption& maxOption = (std::max_element(options.begin(), options.end(), comp)->second);
-    double maxOptionValue = maxOption.theta.tranpose()*maxOption.F*phi;
-    theta = theta + alpha*(b.transpose()*phi + maxOptionValue - theta.tranpose()*phi); 
+    NextStateValueComparator comp(phi);
+    LinearOption& maxOption = *std::max_element(options.begin(), options.end(), comp);
+    double maxOptionValue = maxOption.theta.dot(maxOption.F*phi);
+    theta = theta.array() + alpha*b.dot(phi) + maxOptionValue - theta.dot(phi); 
 
     return epsilonGreedy(phi);
 }

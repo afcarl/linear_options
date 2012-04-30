@@ -1,4 +1,5 @@
 #include <rl_common/core.hh>
+#include <Eigen/Core>
 
 namespace rl {
 
@@ -13,7 +14,7 @@ struct SMDPAgent : public Agent
      * Load options from disk into memory. 
      * @param filename Name unde which to save the options
      */
-    virtual void loadOptions(conss std::string& filename) = 0;
+    virtual void loadOptions(const std::string& filename) = 0;
 
 protected:
     /**
@@ -23,7 +24,7 @@ protected:
      */
     Eigen::VectorXd convertVector(const std::vector<float>& s) {
         Eigen::VectorXd out(s.size());
-        for (int i = 0; i < s.size(); i++) {
+        for (unsigned i = 0; i < s.size(); i++) {
             out(i) = s[i];
         }
         return out; 
