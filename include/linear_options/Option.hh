@@ -1,6 +1,8 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
+
 #include <Eigen/Core>
+#include <rl_common/Random.h>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -21,13 +23,14 @@ struct Option {};
  */
 struct LinearOption : public Option
 {
+    LinearOption() : rng(Random()) {};
     /**
      * @param s The n-dimensional feature vector. 
      * @return True if the option can be taken state s
      * @FIXME Assumes options are available in all states
      */
     virtual bool initiate(const Eigen::VectorXd& s) {
-        return true;
+        return false;
     }
 
     /**
@@ -37,14 +40,20 @@ struct LinearOption : public Option
     virtual double beta(const Eigen::VectorXd& s) { return 1; }
 
     /**
+     * Indicate if the option should terminate in the current state
+     * @param s The n-dimensional feature vector. 
+     * @return True if the execution of the option must stop, false otherwise.
+     */
+    bool terminate(const Eigen::VectorXd& s) {
+        return rng.uniform() < beta(s);
+    }
+
+    /**
      * Returns the best action to choose in every state
      * @param phi The current state
      * @return The best action to choose from state phi
      */
-    virtual int policy(const Eigen::VectorXd& phi) { 
-        // FIXME
-        return 1;
-    }
+    virtual int policy(const Eigen::VectorXd& phi) { return 0; } 
 
     // The option's parameter vector that we are learning
     Eigen::VectorXd theta;
@@ -64,6 +73,8 @@ private:
         ar & F;
         ar & b;
     }
+
+    Random rng;
 };
 } // namespace rl
 
