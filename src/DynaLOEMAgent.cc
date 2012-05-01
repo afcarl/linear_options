@@ -22,7 +22,7 @@ int DynaLOEMAgent::first_action(const std::vector<float> &s)
 
     currentOption = getBestOption(phi);
 
-    return currentOption.policy(phi);
+    return currentOption.greedyPolicy(phi);
 }
 
 int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
@@ -38,7 +38,7 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
     for (auto it = options.begin(); it != options.end(); it++) {
         // Intra-Option learning update
         // Update every consistent option for which u(phi) = a
-        if (it->policy(phi) == lastAction) {
+        if (it->greedyPolicy(phi) == lastAction) {
             Eigen::VectorXd& thetaOption = it->theta;
             double U = (1 - it->beta(phi))*thetaOption.dot(phi) + it->beta(phi)*getBestOption(phi).theta.dot(phi);
             thetaOption = thetaOption + alpha*(r + gamma*U - thetaOption.transpose()*phi)*phi;
@@ -53,7 +53,7 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
         currentOption = getBestOption(phi);
     }
 
-    return currentOption.policy(phi);
+    return currentOption.greedyPolicy(phi);
 }
 
 void DynaLOEMAgent::last_action(float r)

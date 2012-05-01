@@ -1,6 +1,7 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
 
+#include <limits>
 #include <Eigen/Core>
 #include <rl_common/Random.h>
 #include <boost/archive/text_oarchive.hpp>
@@ -29,9 +30,7 @@ struct LinearOption : public Option
      * @return True if the option can be taken state s
      * @FIXME Assumes options are available in all states
      */
-    virtual bool initiate(const Eigen::VectorXd& s) {
-        return false;
-    }
+    virtual bool initiate(const Eigen::VectorXd& s) { return true; }
 
     /**
      * @param s The n-dimensional feature vector. 
@@ -44,18 +43,40 @@ struct LinearOption : public Option
      * @param s The n-dimensional feature vector. 
      * @return True if the execution of the option must stop, false otherwise.
      */
-    bool terminate(const Eigen::VectorXd& s) {
-        return rng.uniform() < beta(s);
-    }
+    bool terminate(const Eigen::VectorXd& s) { return rng.uniform() < beta(s); }
 
     /**
      * Returns the best action to choose in every state
      * @param phi The current state
      * @return The best action to choose from state phi
      */
-    virtual int policy(const Eigen::VectorXd& phi) { return 0; } 
+    int greedyPolicy(const Eigen::VectorXd& phi) { 
+        double maxValue;
+        double maxAction = -1*std::numeric_limits<double>::max();
+        for (unsigned i = 0; i < actionValueThetas.size(); i++) {
+           if (actionValueThetas[i].dot(phi) > maxValue) {
+               maxAction = i;
+           }
+        }
 
-    // The option's parameter vector that we are learning
+        return maxAction;
+    }
+
+    /**
+     * Control with function approximation and Q(0) 
+     */
+    int next_action(double reward, const Eigen::VectorXd& phiPrime) {
+        
+        actionValueThetas[lastAction] = actionValueThetas[lastAction].array() + lastPhi.array()*(reward + gamma*actionValueThetas[greedyPolicy(phiPrime)].dot(phiPrime) - actionValueThetas[lastAction].dot(lastPhi))*alpha;
+
+        lastAction  = (rng.uniform() < epsilon) ? rng.uniformDiscrete(0, numActions-1) : greedyPolicy(phiPrime); 
+        lastPhi = phiPrime;
+
+        return lastAction;
+    }
+
+    // The option's parameter vector that we are learning. 
+    // Used by the behavior policy for control
     Eigen::VectorXd theta;
 
     // Transition model
@@ -65,10 +86,30 @@ struct LinearOption : public Option
     Eigen::VectorXd b;
 
 private:
+    // Linear approximation for the pseudo-Q-function. 
+    // Used by the option's policy for control
+    std::vector<Eigen::VectorXd> actionValueThetas;
+
+    // Last primitive action executed during learning
+    int lastAction;
+   
+    // Last state visited 
+    Eigen::VectorXd lastPhi; 
+
+    double alpha;
+
+    double epsilon;
+
+    double gamma;
+
+    int numActions;
+
+    // Serialization for model parameters 
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
+        ar & actionValueThetas;
         ar & theta;
         ar & F;
         ar & b;
@@ -80,7 +121,6 @@ private:
 
 namespace boost {
 namespace serialization {
-
 // MatrixXd
 template<class Archive>
 void load( Archive & ar,
