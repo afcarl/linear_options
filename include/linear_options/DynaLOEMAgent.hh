@@ -1,3 +1,6 @@
+#ifndef __DYNA_LOEM_AGENT_H__
+#define __DYNA_LOEM_AGENT_H__
+
 #include <linear_options/LOEMAgent.hh>
 
 namespace rl {
@@ -36,13 +39,6 @@ public:
 
 protected:    
     /**
-     * Choose the best action with probability 1-epsilon, random with epsilon
-     * @param phi The current state in the projected n-d space
-     * @param The index of the primitive action to execute 
-     */
-    int epsilonGreedy(const Eigen::VectorXd& phi);
-
-    /**
      * Return the action with the highest return max_o Q(s, O)
      * @param phi The n-dimensional projection of a state
      * @param the LinearOption of maximum value
@@ -80,3 +76,4 @@ protected:
 };
 
 }
+#endif

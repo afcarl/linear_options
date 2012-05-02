@@ -1,3 +1,6 @@
+#ifndef __SMDP_AGENT_H__
+#define __SMDP_AGENT_H__
+
 #include <rl_common/core.hh>
 #include <Eigen/Core>
 
@@ -32,3 +35,4 @@ protected:
 };
 
 }
+#endif

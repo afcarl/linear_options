@@ -1,11 +1,11 @@
-#ifndef _OPTION_H_
-#define _OPTION_H_
+#ifndef __OPTION_H__
+#define __OPTION_H__
+
+#include <linear_options/serialization.hh>
 
 #include <limits>
 #include <Eigen/Core>
 #include <rl_common/Random.h>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 
 namespace rl {
 
@@ -25,6 +25,7 @@ struct Option {};
 struct LinearOption : public Option
 {
     LinearOption() : rng(Random()) {};
+
     /**
      * @param s The n-dimensional feature vector. 
      * @return True if the option can be taken state s
@@ -62,19 +63,6 @@ struct LinearOption : public Option
         return maxAction;
     }
 
-    /**
-     * Control with function approximation and Q(0) 
-     */
-    int next_action(double reward, const Eigen::VectorXd& phiPrime) {
-        
-        actionValueThetas[lastAction] = actionValueThetas[lastAction].array() + lastPhi.array()*(reward + gamma*actionValueThetas[greedyPolicy(phiPrime)].dot(phiPrime) - actionValueThetas[lastAction].dot(lastPhi))*alpha;
-
-        lastAction  = (rng.uniform() < epsilon) ? rng.uniformDiscrete(0, numActions-1) : greedyPolicy(phiPrime); 
-        lastPhi = phiPrime;
-
-        return lastAction;
-    }
-
     // The option's parameter vector that we are learning. 
     // Used by the behavior policy for control
     Eigen::VectorXd theta;
@@ -90,20 +78,6 @@ private:
     // Used by the option's policy for control
     std::vector<Eigen::VectorXd> actionValueThetas;
 
-    // Last primitive action executed during learning
-    int lastAction;
-   
-    // Last state visited 
-    Eigen::VectorXd lastPhi; 
-
-    double alpha;
-
-    double epsilon;
-
-    double gamma;
-
-    int numActions;
-
     // Serialization for model parameters 
     friend class boost::serialization::access;
     template<class Archive>
@@ -117,72 +91,12 @@ private:
 
     Random rng;
 };
+
+struct LinearOptionModel
+{
+
+};
+
 } // namespace rl
 
-namespace boost {
-namespace serialization {
-// MatrixXd
-template<class Archive>
-void load( Archive & ar,
-           Eigen::MatrixXd & t,
-           const unsigned int file_version )
-{
-    int n0;
-    ar >> BOOST_SERIALIZATION_NVP(n0);
-    int n1;
-    ar >> BOOST_SERIALIZATION_NVP(n1);
-    t.resize( n0, n1 );
-    ar >> make_array(t.data(), t.rows()*t.cols());
-}
-template<typename Archive>
-void save( Archive & ar,
-           const Eigen::MatrixXd & t,
-           const unsigned int file_version )
-{
-    int n0 = t.rows();
-    ar << BOOST_SERIALIZATION_NVP(n0);
-    int n1 = t.cols();
-    ar << BOOST_SERIALIZATION_NVP(n1);
-    ar << boost::serialization::make_array(t.data(),
-                                           t.rows()*t.cols());
-}
-template<class Archive>
-void serialize( Archive & ar,
-                Eigen::MatrixXd& t,
-                const unsigned int file_version )
-{
-    split_free(ar, t, file_version);
-}
-
-// Eigen::VectorXd
-template<class Archive>
-void load( Archive & ar,
-           Eigen::VectorXd & t,
-           const unsigned int file_version )
-{
-    int n0;
-    ar >> BOOST_SERIALIZATION_NVP(n0);
-    t.resize( n0 );
-    ar >> make_array(t.data(), t.size());
-}
-template<typename Archive>
-void save( Archive & ar,
-           const Eigen::VectorXd & t,
-           const unsigned int file_version )
-{
-    int n0 = t.size();
-    ar << BOOST_SERIALIZATION_NVP(n0);
-    ar << boost::serialization::make_array(t.data(),
-                                           t.size());
-}
-template<class Archive>
-void serialize( Archive & ar,
-                Eigen::VectorXd& t,
-                const unsigned int file_version )
-{
-    split_free(ar, t, file_version);
-}
-
-} // namespace serialization
-} // namespace boost
 #endif

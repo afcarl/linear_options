@@ -1,25 +1,21 @@
-#include <linear_options/SMDPAgent.hh>
+#ifndef __LOEM_AGENT_H__
+#define __LOEM_AGENT_H__
+
+#include <linear_options/serialization.hh>
 #include <linear_options/StateAbstraction.hh>
+#include <linear_options/SMDPAgent.hh>
 #include <linear_options/Option.hh>
 
 #include <fstream>
 #include <iomanip>
-#include <vector>
-
-#include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 
 namespace rl {
 
 class LOEMAgent : public SMDPAgent
 {
 public:
-    LOEMAgent(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, Random rng) : 
+    LOEMAgent(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, Random rng = Random()) : 
         numActions(numActions), 
         alpha(alpha),
         epsilon(epsilon),
@@ -80,3 +76,4 @@ private:
 };
 
 }
+#endif
