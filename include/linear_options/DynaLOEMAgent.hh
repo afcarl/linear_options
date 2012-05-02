@@ -54,7 +54,7 @@ private:
     int lastAction;
 
     // Last state visited
-    Eigen::VectorXd lastState;
+    Eigen::VectorXd lastPhi;
 
     // The option that we are currently executing up to termination
     LinearOption* currentOption;

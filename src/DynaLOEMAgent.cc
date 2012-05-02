@@ -18,7 +18,7 @@ LinearOption* DynaLOEMAgent::getBestOption(const Eigen::VectorXd& phi)
 int DynaLOEMAgent::first_action(const std::vector<float> &s)
 {
     auto phi = project(s);
-    lastState = phi;
+    lastPhi = phi;
 
     currentOption = getBestOption(phi);
 
@@ -28,7 +28,6 @@ int DynaLOEMAgent::first_action(const std::vector<float> &s)
 int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
 {
     auto phi = project(s); 
-    lastState = phi;
 
     // Find the option with highest expected discounted reward from the current state
     NextStateValueComparator comp(this, phi);
@@ -36,12 +35,17 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
     double maxOptionValue = maxOption->theta.dot(optionModels[maxOption]->F*phi);
 
     for (auto it = options.begin(); it != options.end(); it++) {
-        // Intra-Option learning update
         // Update every consistent option for which u(phi) = a
         if ((*it)->greedyPolicy(phi) == lastAction) {
+            
+            // Intra-Option value learning 
             Eigen::VectorXd& thetaOption = (*it)->theta;
             double U = (1 - (*it)->beta(phi))*thetaOption.dot(phi) + (*it)->beta(phi)*getBestOption(phi)->theta.dot(phi);
             thetaOption = thetaOption + alpha*(r + gamma*U - thetaOption.transpose()*phi)*phi;
+
+            // Intra-Option model learning for transition kernel F 
+            Eigen::VectorXd eta = lastPhi - gamma*(1 - (*it)->beta(phi))*phi;
+            optionModels[(*it)]->F = optionModels[(*it)]->F + alpha*(gamma*(*it)->beta(phi)*phi - optionModels[(*it)]->F*eta);
         }
 
         // Execute one planning update for every option
@@ -52,6 +56,8 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
     if (currentOption->terminate(phi)) {
         currentOption = getBestOption(phi);
     }
+
+    lastPhi = phi;
 
     return currentOption->greedyPolicy(phi);
 }

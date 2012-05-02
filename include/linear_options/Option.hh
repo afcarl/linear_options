@@ -90,15 +90,6 @@ private:
  */
 struct LinearOptionModel
 {
-    /**
-     * Update the option model with experience resulting from initiating 
-     * an option while following a behavior policy pi.
-     * @param phi The current state
-     * @param phiPrime The resulting state
-     * @param reward The cumulative reward obtained after the option has terminated
-     */
-    virtual void updateWithExperience(const Eigen::VectorXd& phi, const Eigen::VectorXd& phiPrime, double reward) = 0;
-
     // Transition model
     Eigen::MatrixXd F;
 
