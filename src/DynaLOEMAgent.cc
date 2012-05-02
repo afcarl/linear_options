@@ -3,6 +3,12 @@
 
 using namespace rl;
 
+DynaLOEMAgent::DynaLOEMAgent(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, const std::string& optionsFile, const std::string& optionModelsFile, Random rng) : LOEMAgent(numActions, alpha, epsilon, gamma, stateAbstraction, rng), optionsFile(optionsFile), optionModelsFile(optionModelsFile)
+{
+    loadOptions(optionsFile);
+    loadOptionModels(optionModelsFile);
+}
+
 LinearOption* DynaLOEMAgent::getBestOption(const Eigen::VectorXd& phi)
 {
     ValueComparator comp(phi);
@@ -45,7 +51,7 @@ int DynaLOEMAgent::next_action(float r, const std::vector<float> &s)
 
             // Intra-Option model learning for transition kernel F 
             Eigen::VectorXd eta = lastPhi - gamma*(1 - (*it)->beta(phi))*phi;
-            optionModels[(*it)]->F = optionModels[(*it)]->F + alpha*(gamma*(*it)->beta(phi)*phi - optionModels[(*it)]->F*eta);
+            optionModels[(*it)]->F = optionModels[(*it)]->F + alpha*(gamma*(*it)->beta(phi)*phi - optionModels[(*it)]->F*eta)*eta.transpose();
         }
 
         // Execute one planning update for every option

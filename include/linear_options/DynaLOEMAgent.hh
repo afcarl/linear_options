@@ -15,8 +15,8 @@ namespace rl {
 class DynaLOEMAgent : public LOEMAgent
 {
 public:
-     DynaLOEMAgent();
-    ~DynaLOEMAgent();
+     DynaLOEMAgent(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, const std::string& optionsFile, const std::string& optionModelsFile, Random rng = Random()); 
+    virtual ~DynaLOEMAgent() {};
 
     /**
      * @Override
@@ -49,7 +49,29 @@ protected:
     // We maintain a model of the transition and reward dynamics for every option.
     std::map<LinearOption*, LinearOptionModel*> optionModels;
 
+    void saveOptionModels(const std::string& filename) 
+    {
+        std::ofstream file(filename); 
+        boost::archive::text_oarchive oa(file);
+        for (auto it = options.begin(); it != options.end(); it++) {
+            oa << optionModels[(*it)];
+        }
+    }
+
+    void loadOptionModels(const std::string& filename)
+    {
+        std::ifstream ifs(filename, std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        for (auto it = options.begin(); it != options.end(); it++) {
+            ia >> optionModels[(*it)];
+        }
+    }
+
 private:
+    // Path to the saved options
+    std::string optionsFile;
+    std::string optionModelsFile;
+
     // Last action executed
     int lastAction;
 
