@@ -2,6 +2,7 @@
 #define __DYNA_LOEM_AGENT_H__
 
 #include <linear_options/LOEMAgent.hh>
+#include <map>
 
 namespace rl {
 
@@ -43,33 +44,38 @@ protected:
      * @param phi The n-dimensional projection of a state
      * @param the LinearOption of maximum value
      */
-    LinearOption& getBestOption(const Eigen::VectorXd& phi);
+    LinearOption* getBestOption(const Eigen::VectorXd& phi);
 
-    // Last option executed
-    LinearOption& lastOption;
+    // We maintain a model of the transition and reward dynamics for every option.
+    std::map<LinearOption*, LinearOptionModel*> optionModels;
 
+private:
     // Last action executed
     int lastAction;
 
     // Last state visited
     Eigen::VectorXd lastState;
 
-    LinearOption& currentOption;
+    // The option that we are currently executing up to termination
+    LinearOption* currentOption;
 
     // Maximum value for next state from s
     struct NextStateValueComparator {
-        NextStateValueComparator(const Eigen::VectorXd& phi) : phi(phi) {}
-        bool operator() (const LinearOption& a, const LinearOption& b) { 
-            return a.theta.transpose()*a.F*phi < b.theta.transpose()*b.F*phi;     
+        NextStateValueComparator(DynaLOEMAgent* self, const Eigen::VectorXd& phi) : self(self), phi(phi) {}
+
+        bool operator() (LinearOption*& a, LinearOption*& b) { 
+            return a->theta.transpose()*self->optionModels[a]->F*phi < b->theta.transpose()*self->optionModels[b]->F*phi;     
         }
+
+        DynaLOEMAgent* self;
         const Eigen::VectorXd& phi;
     };
 
     // Choose new option according to main behavior policy 
     struct ValueComparator {
         ValueComparator(const Eigen::VectorXd& phi) : phi(phi) {}
-        bool operator() (const LinearOption& a, const LinearOption& b) { 
-            return a.theta.transpose()*phi < b.theta.transpose()*phi;     
+        bool operator() (LinearOption*& a, LinearOption*& b) { 
+            return a->theta.transpose()*phi < b->theta.transpose()*phi;     
         }
         const Eigen::VectorXd& phi;
     };

@@ -67,12 +67,6 @@ struct LinearOption : public Option
     // Used by the behavior policy for control
     Eigen::VectorXd theta;
 
-    // Transition model
-    Eigen::MatrixXd F;
-
-    // Reward model 
-    Eigen::VectorXd b;
-
 private:
     // Linear approximation for the pseudo-Q-function. 
     // Used by the option's policy for control
@@ -85,16 +79,41 @@ private:
     {
         ar & actionValueThetas;
         ar & theta;
-        ar & F;
-        ar & b;
     }
 
     Random rng;
 };
 
+/**
+ * A model can be associated with a linear option.
+ * The learning algorithm is implemented in the derived classes.
+ */
 struct LinearOptionModel
 {
+    /**
+     * Update the option model with experience resulting from initiating 
+     * an option while following a behavior policy pi.
+     * @param phi The current state
+     * @param phiPrime The resulting state
+     * @param reward The cumulative reward obtained after the option has terminated
+     */
+    virtual void updateWithExperience(const Eigen::VectorXd& phi, const Eigen::VectorXd& phiPrime, double reward) = 0;
 
+    // Transition model
+    Eigen::MatrixXd F;
+
+    // Reward model 
+    Eigen::VectorXd b;
+
+private:
+    // Serialization for model parameters 
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & F;
+        ar & b;
+    }
 };
 
 } // namespace rl

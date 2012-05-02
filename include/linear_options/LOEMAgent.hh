@@ -56,7 +56,7 @@ protected:
     }
 
     // Contains the linear options loaded from disk
-    std::vector<LinearOption> options;
+    std::vector<LinearOption*> options;
 
     unsigned numActions;
     double alpha;
