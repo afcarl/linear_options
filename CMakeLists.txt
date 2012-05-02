@@ -25,6 +25,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include_directories(${EIGEN_INCLUDE_DIRS})
 find_package(Eigen REQUIRED)
+find_package(OpenCV REQUIRED)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -41,10 +42,12 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_library(linearoptionlib
   src/DynaLOEMAgent.cc
+  src/LinearQ0Learner.cc
+  src/ContinuousRooms.cc
 )
 
 rosbuild_add_executable(run_experiment
   src/ContinuousRoomExperiment.cc
 )
-target_link_libraries(run_experiment linearoptionlib)
+target_link_libraries(run_experiment linearoptionlib ${OpenCV_LIBS})
 rosbuild_link_boost(run_experiment serialization)

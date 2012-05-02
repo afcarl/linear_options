@@ -1,5 +1,7 @@
 #include <linear_options/LinearQ0Learner.hh>
 
+using namespace rl;
+
 int LinearQ0Learner::getBestAction(const Eigen::VectorXd& phi) 
 {
     double maxValue;
@@ -23,7 +25,7 @@ int LinearQ0Learner::first_action(const std::vector<float> &s)
     return lastAction;
 }
 
-int LinearQ0Learner::next_action(float r, const std::vector<float> &s)
+int LinearQ0Learner::next_action(float reward, const std::vector<float> &s)
 {
     auto phiPrime = project(s);
 
@@ -35,7 +37,7 @@ int LinearQ0Learner::next_action(float r, const std::vector<float> &s)
     return lastAction;
 }
 
-void LinearQ0Learner::last_action(float r)
+void LinearQ0Learner::last_action(float reward)
 {
     // TODO Check if this is correct
     actionValueThetas[lastAction] = actionValueThetas[lastAction].array() + lastPhi.array()*(reward - actionValueThetas[lastAction].dot(lastPhi))*alpha;
