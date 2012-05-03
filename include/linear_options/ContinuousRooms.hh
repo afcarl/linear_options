@@ -6,7 +6,7 @@
 
 struct ContinuousRooms : public Environment 
 {
-  ContinuousRooms(const std::string& map, double robotRadius, double scaling = 1.0, Random rng = Random());
+  ContinuousRooms(const std::string& map, double robotRadius, Random rng = Random());
    
   enum PRIMITIVE_ACTIONS { FORWARD, LEFT, RIGHT, NUM_ACTIONS };
 
@@ -55,8 +55,6 @@ private:
     cv::Mat map;
 
     double robotRadius;
-
-    double scaling;
 
     /**
      * Return the boundaries of a circular region of interest

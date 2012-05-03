@@ -2,17 +2,14 @@
 
 #include <opencv/highgui.h>
 
-ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, double scaling, Random rng) : 
+ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, Random rng) : 
     map(cv::imread(filename)),
     robotRadius(robotRadius),
-    scaling(scaling),
-    x(3),
-    y(8),
-    psi(M_PI/2.0),
-    terminated(false),
     rng(rng)
 {
+    reset();
     currentState.resize(7);
+    updateStateVector();
 }
 
 const std::vector<float>& ContinuousRooms::sensation() const
@@ -67,6 +64,17 @@ void ContinuousRooms::getCircularROI(int R, std::vector<int>& RxV)
 
 float ContinuousRooms::apply(int action)
 {
+   // Check if we have reached the goal 
+   // by entering the bottom right corner yellow room 
+   if ((x > map.size().width/2.0 && y > map.size().height/2.0) 
+           &&  (map.at<cv::Vec3b>(y, x)[2] == 255 && 
+               map.at<cv::Vec3b>(y, x)[1] == 255 && 
+               map.at<cv::Vec3b>(y, x)[0] == 0)) {
+       terminated = true;
+       updateStateVector();
+       return REWARD_SUCCESS;
+   } 
+
    if (action == FORWARD) {
        // Moves 1 unit forward in the current orientation
        // with zero mean Gaussian noise with 0.1 std deviation
@@ -99,7 +107,7 @@ float ContinuousRooms::apply(int action)
 
    // The left and right actions turn the robot 30 degrees
    // in the specified direction 
-   if (action == LEFT) {
+   if (action == RIGHT) {
        psi += M_PI/6.0; 
        if (psi == 2.0*M_PI) {
            psi = 0;
@@ -109,7 +117,7 @@ float ContinuousRooms::apply(int action)
        return REWARD_FAILURE;  
    }
 
-   if (action == RIGHT) {
+   if (action == LEFT) {
        psi -= M_PI/6.0;
        if (psi == -2.0 * M_PI) {
            psi = 0;
@@ -119,20 +127,6 @@ float ContinuousRooms::apply(int action)
        return REWARD_FAILURE;  
    }
 
-   // Check if we have reached the goal 
-   // by entering the bottom right corner yellow room 
-   cv::Vec3b intensity = map.at<cv::Vec3b>(y, x);
-   uchar blue = intensity.val[0];
-   uchar green = intensity.val[1];
-   uchar red = intensity.val[2];
-
-   if ((x > map.size().width/2.0 && y > map.size().height/2.0) 
-           &&  (red == 255 && green == 255 && blue == 0)) {
-       terminated = true;
-       
-       updateStateVector();
-       return REWARD_SUCCESS;
-   } 
 
    return REWARD_FAILURE;   
 }
@@ -145,8 +139,8 @@ bool ContinuousRooms::terminal() const
 void ContinuousRooms::reset()
 {
     terminated = false;
-    x = 3;
-    y = 8;
+    x = 12;
+    y = 12;
     psi = M_PI/2.0;
 }
 
