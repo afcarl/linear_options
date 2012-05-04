@@ -2,11 +2,14 @@
 
 #include <opencv/highgui.h>
 
-ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, Random rng) : 
+ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, double safety, bool randomizeInitialPosition, Random rng) : 
     map(cv::imread(filename)),
     robotRadius(robotRadius),
+    safetyMargin(safety),
+    randomPosition(randomizeInitialPosition),
     rng(rng)
 {
+    getCircularROI(robotRadius + safetyMargin, circularROI);
     reset();
     currentState.resize(7);
     updateStateVector();
@@ -54,12 +57,35 @@ void ContinuousRooms::updateStateVector()
     currentState[6] = psi;
 }
 
-void ContinuousRooms::getCircularROI(int R, std::vector<int>& RxV)
+void ContinuousRooms::getCircularROI(int R, std::vector<int>& circularROI)
 {
-    RxV.resize(R+1);
+    circularROI.resize(R+1);
     for( int y = 0; y <= R; y++ ) {
-        RxV[y] = cvRound(sqrt((double)R*R - y*y));
+        circularROI[y] = cvRound(sqrt((double)R*R - y*y));
     }
+}
+
+bool ContinuousRooms::isCollisionFree(double xPrime, double yPrime)
+{
+   for (int dy = -robotRadius - safetyMargin; dy <= robotRadius + safetyMargin; dy++) { 
+       int Rx = circularROI[abs(dy)];
+       for (int dx = -Rx; dx <= Rx; dx++ ) { 
+           // Check boundary conditions
+           if (xPrime + dx >= map.size().width || yPrime + dy >= map.size().height) {
+               std::cerr << "Boundary" << std::endl;
+               return false;
+           }
+
+           // Check if there would be a wall within the circle
+           if (map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[0] == 0 && 
+               map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[1] == 0 && 
+               map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[2] == 0) {
+               return false; 
+           } 
+       }
+   }
+
+   return true;
 }
 
 float ContinuousRooms::apply(int action)
@@ -81,21 +107,8 @@ float ContinuousRooms::apply(int action)
        double xPrime = x + std::cos(psi) + rng.normal(0.0, 0.1);
        double yPrime = y + std::sin(psi) + rng.normal(0.0, 0.1); 
 
-       // Detect collision 
-       // Pretend the robot is a square     
-       std::vector<int> RxV;
-       getCircularROI(robotRadius, RxV);
-
-       for(int dy = -robotRadius; dy <= robotRadius; dy++) { 
-           int Rx = RxV[abs(dy)];
-           for( int dx = -Rx; dx <= Rx; dx++ ) { 
-               // Check if there would be a wall within the circle
-               if (map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[0] == 0 && 
-                   map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[1] == 0 && 
-                   map.at<cv::Vec3b>(yPrime + dy, xPrime + dx)[2] == 0) {
-                   return REWARD_FAILURE;  
-               }
-           }
+       if (!isCollisionFree(xPrime, yPrime)) {
+           return REWARD_FAILURE;
        }
 
        x = xPrime;
@@ -139,8 +152,20 @@ bool ContinuousRooms::terminal() const
 void ContinuousRooms::reset()
 {
     terminated = false;
-    x = 12;
-    y = 12;
+
+    double xInit = 12;
+    double yInit = 12;
+
+    if (randomPosition) {
+        do {
+            xInit = rng.uniform(12, map.size().width-1);
+            yInit = rng.uniform(12, map.size().height-1);
+        } while (!isCollisionFree(xInit, yInit));
+    }
+
+    x = xInit; 
+    y = yInit; 
+
     psi = M_PI/2.0;
 }
 

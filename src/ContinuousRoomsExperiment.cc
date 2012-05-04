@@ -34,7 +34,7 @@ private:
 
 int main(void)
 {
-    ContinuousRooms env("map.png", 5); 
+    ContinuousRooms env("map.png", 5, 0, true); 
     cv::Mat img = cv::imread("map.png");
 
     env.apply(ContinuousRooms::LEFT);
@@ -46,10 +46,10 @@ int main(void)
     for (int i = 0; i < 125; i++) {
         double reward = env.apply(ContinuousRooms::FORWARD);
         auto s = env.sensation();
-        std::cout << "Sensation x, y reward " << s[4] << " " << s[5] << " " << reward << std::endl;
+       std::cout << "Sensation x, y reward " << s[4] << " " << s[5] << " " << reward << std::endl;
 
         cv::circle(img, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
-        cv::imshow("world", img);
+        cv::imshow("world", img); 
 
         if(cv::waitKey(30) >= 0) break;
         sleep(0.5);

@@ -6,9 +6,10 @@
 
 struct ContinuousRooms : public Environment 
 {
-  ContinuousRooms(const std::string& map, double robotRadius, Random rng = Random());
+  ContinuousRooms(const std::string& map, double robotRadius, double safetyMargin = 0, bool randomizeInitialPosition = false, Random rng = Random());
    
   enum PRIMITIVE_ACTIONS { FORWARD, LEFT, RIGHT, NUM_ACTIONS };
+  enum ROOM_COLORS { GREEN, BLUE, PURPLE, YELLOW, NUM_COLORS };
 
   static const double REWARD_FAILURE = -0.01;
 
@@ -50,19 +51,30 @@ struct ContinuousRooms : public Environment
    */
   virtual void getMinMaxReward(float *minR, float *maxR);
 
-private:
     // RGB image corresponding to the layout of the world
+    // FIXME
     cv::Mat map;
+protected:
+   /**
+    * @param x 
+    * @param y
+    * @return true if there is a collision with this configuration
+    */ 
+   bool isCollisionFree(double x, double y); 
+
+private:
+    std::vector<int> circularROI;
 
     double robotRadius;
+    double safetyMargin;
 
     /**
      * Return the boundaries of a circular region of interest
      * Used for collision detection
      * @param R radius
-     * @param RxV output vector
+     * @param circularROI output vector
      */
-    void getCircularROI(int R, std::vector<int>& RxV);
+    void getCircularROI(int R, std::vector<int>& circularROI);
 
     void updateStateVector();
 
@@ -73,6 +85,7 @@ private:
 
     bool terminated;
 
+    bool randomPosition;
     Random rng;
 
     std::vector<float> currentState;
