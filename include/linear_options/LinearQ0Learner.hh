@@ -18,14 +18,7 @@ namespace rl {
 class LinearQ0Learner : public Agent 
 {
 public:
-    LinearQ0Learner(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, Random rng = Random()) : 
-        numActions(numActions), 
-        alpha(alpha),
-        epsilon(epsilon),
-        gamma(gamma),
-        stateAbstraction(&stateAbstraction),
-        rng(rng)
-    { actionValueThetas.resize(numActions); }
+    LinearQ0Learner(unsigned numActions, double alpha, double epsilon, double gamma, rl::state_abstraction& stateAbstraction, Random rng = Random());
     virtual ~LinearQ0Learner() {};
 
     /**
@@ -48,6 +41,18 @@ public:
      */
     void setDebug(bool d);
 
+    /**
+     * Save the parameter vectors for every action
+     * @param filename The path to the file containing the theta parameters for every action
+     */
+    void savePolicy(const std::string& filename);
+
+    /**
+     * Load the parameter vectors from file
+     * @param filename The path to the file containing the theta parameters for every action
+     */
+    void loadPolicy(const std::string& filename);
+
 protected:
     /**
      * Return the best action to take with respect to the current theta estimates
@@ -56,6 +61,13 @@ protected:
      * @return The action corresponding to the greedy policy
      */
     int getBestAction(const Eigen::VectorXd& phi);
+
+    /**
+     * Choose the next action based on an epsilon-greedy strategy
+     * @param phi The current state
+     * @return A primitive action uniformly at random with epsilon, (1 - epsilon) the best action.
+     */
+    int epsilonGreedy(const Eigen::VectorXd& phi);
 
     /**
      * Convert an STL vector to an Eigen::Vector of double.
