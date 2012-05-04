@@ -11,7 +11,7 @@
  */
 struct room_abstraction : public rl::state_abstraction
 {
-    room_abstraction(Eigen::MatrixXd U, Eigen::Vector3d C = Eigen::Vector3d(1.0/1.2, 1.0/1.2, 1/30), double b = 20) :
+    room_abstraction(Eigen::MatrixXd U, Eigen::Vector3d C = Eigen::Vector3d(1.0/10.2, 1.0/10.2, 1/30), double b = 200) :
        b(b), U(U), C(C.asDiagonal()) {};
 
     Eigen::VectorXd operator()(const Eigen::VectorXd& s) {
@@ -23,6 +23,8 @@ struct room_abstraction : public rl::state_abstraction
 
         return phi;
     }
+
+    int length() { return U.cols(); }
 
 private:
     double b;
