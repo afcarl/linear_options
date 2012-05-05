@@ -2,11 +2,11 @@
 
 #include <opencv/highgui.h>
 
-ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, double safety, bool randomizeInitialPosition, Random rng) : 
+ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius, bool randomizeInitialPosition, double safety, Random rng) : 
     map(cv::imread(filename)),
     robotRadius(robotRadius),
-    safetyMargin(safety),
     randomPosition(randomizeInitialPosition),
+    safetyMargin(safety),
     rng(rng)
 {
     getCircularROI(robotRadius + safetyMargin, circularROI);
@@ -153,13 +153,13 @@ void ContinuousRooms::reset()
 {
     terminated = false;
 
-    double xInit = 12;
-    double yInit = 12;
+    double xInit = 12; 
+    double yInit = 12; 
 
     if (randomPosition) {
         do {
-            xInit = rng.uniform(12, map.size().width-1);
-            yInit = rng.uniform(12, map.size().height-1);
+            xInit = rng.uniform(robotRadius/2.0, map.size().width-1);
+            yInit = rng.uniform(robotRadius/2.0, map.size().height-1);
         } while (!isCollisionFree(xInit, yInit));
     }
 

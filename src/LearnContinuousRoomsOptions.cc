@@ -3,6 +3,8 @@
 #include <linear_options/LinearQ0Learner.hh>
 #include <linear_options/RewardDecorator.hh>
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 /**
  * We build the feature vector from a set of radial basis functions
  * spread over the space in the x, y and psi dimensions. 
@@ -22,18 +24,24 @@ struct room_abstraction : public rl::state_abstraction
      */
     Eigen::VectorXd operator()(const Eigen::VectorXd& s) {
         Eigen::VectorXd phi(length());
+        // The first 4 elements are binary indicator variables for floor color
         phi(0) = s[0];
         phi(1) = s[1];
         phi(2) = s[2];
         phi(3) = s[3];
-        for (int i = 4; i < U.cols(); i++) {
-            phi(i) = -0.5*(s - U.col(i)).transpose()*C*(s - U.col(i));
+
+        // The next 3 elements: x, y, psi
+        for (int i = 0; i < U.rows(); i++) {
+            phi(i + 4) = b*exp(-0.5*(s.tail(U.cols()) - U.row(i).transpose()).dot(C*(s.tail(U.cols()) - U.row(i).transpose()))); 
+            if (phi(i + 4) < 0.1) { 
+                phi(i + 4) = 0;
+            }
         }
 
         return phi;
     }
 
-    int length() { return U.cols() + 4; }
+    int length() { return U.rows() + 4; }
 
 private:
     double b;
@@ -85,6 +93,15 @@ struct ReachNearestColorRewardDecorator : public rl::RewardDecorator
             return REWARD_FAILURE;
         }    
     }
+
+    bool terminal(const std::vector<float> &s)
+    {
+        if (s[targetColor]) { 
+            return true;
+        } else {
+            return false; 
+        }    
+    }
 };
 
 int main(void)
@@ -104,15 +121,42 @@ for (double x = 10.2/2.0; x < 200; x += 10) {
     }
 }
 Eigen::Vector3d C(1.0/10.2, 1.0/10.2, 1/30);
-room_abstraction stateAbstraction(U.transpose(), C, 200);
+room_abstraction stateAbstraction(U, C, 20);
 
-const double robotRadius = 5;
-ContinuousRooms env("map.png", robotRadius);
-
-// Learn a policy for reaching the subgoals defined by the pseudo-reward functions
-std::vector<Agent*> agents;
+// Instantiate agents for learning a policy for reaching 
+// the subgoals defined by the pseudo-reward functions
+std::vector<rl::RewardDecorator*> agents;
 for (int color = 0; color < ContinuousRooms::NUM_COLORS; color++) {
     agents.push_back(new ReachNearestColorRewardDecorator(*(new rl::LinearQ0Learner(ContinuousRooms::NUM_ACTIONS, 5e-4, 0.1, 0.6, stateAbstraction)), color));
+}
+
+// We use a virtual world of 200x200 units with a 10 units wide robot
+const double robotRadius = 5;
+ContinuousRooms env("map.png", robotRadius, true);
+
+cv::Mat img = cv::imread("map.png");
+
+// Train a separate agent for each option and take the resulting policy
+for (auto itAgent = agents.begin(); itAgent != agents.end(); itAgent++) {
+    auto s = env.sensation();
+    auto reward = env.apply((*itAgent)->first_action(s));
+
+    while (!(*itAgent)->terminal(s)) {
+        s = env.sensation();
+        reward = env.apply((*itAgent)->next_action(reward, s));
+
+        std::cout << "Reward " << reward << std::endl;
+        cv::circle(img, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
+        cv::imshow("world", img); 
+
+        if(cv::waitKey(30) >= 0) break;
+        sleep(0.25);
+    }
+
+    s = env.sensation();
+    (*itAgent)->last_action(reward);
+
+    env.reset();
 }
 
 return 0;

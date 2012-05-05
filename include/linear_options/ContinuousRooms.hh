@@ -6,7 +6,7 @@
 
 struct ContinuousRooms : public Environment 
 {
-  ContinuousRooms(const std::string& map, double robotRadius, double safetyMargin = 0, bool randomizeInitialPosition = false, Random rng = Random());
+  ContinuousRooms(const std::string& map, double robotRadius, bool randomizeInitialPosition = false, double safetyMargin = 0, Random rng = Random());
    
   enum PRIMITIVE_ACTIONS { FORWARD, LEFT, RIGHT, NUM_ACTIONS };
   enum ROOM_COLORS { GREEN, BLUE, PURPLE, YELLOW, NUM_COLORS };
@@ -66,7 +66,6 @@ private:
     std::vector<int> circularROI;
 
     double robotRadius;
-    double safetyMargin;
 
     /**
      * Return the boundaries of a circular region of interest
@@ -86,6 +85,7 @@ private:
     bool terminated;
 
     bool randomPosition;
+    double safetyMargin;
     Random rng;
 
     std::vector<float> currentState;

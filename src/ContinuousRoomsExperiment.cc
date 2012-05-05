@@ -34,7 +34,7 @@ private:
 
 int main(void)
 {
-    ContinuousRooms env("map.png", 5, 0, true); 
+    ContinuousRooms env("map.png", 5, true); 
     cv::Mat img = cv::imread("map.png");
 
     env.apply(ContinuousRooms::LEFT);
