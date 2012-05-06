@@ -123,7 +123,7 @@ float ContinuousRooms::apply(int action)
        return REWARD_SUCCESS;
    } 
 
-   double reward = REWARD_FAILURE;
+   double reward = NEGATIVE_REWARD_EXTRA_STEP;
    if (action == FORWARD) {
        // Moves 1 unit forward in the current orientation
        // with zero mean Gaussian noise with 0.1 std deviation
@@ -131,13 +131,14 @@ float ContinuousRooms::apply(int action)
        double yPrime = y + std::sin(psi) + rng.normal(0.0, 0.1); 
 
        if (!isCollisionFree(xPrime, yPrime)) {
-           reward = REWARD_FAILURE;
+           reward = NEGATIVE_REWARD_COLLISION;
+           //std::cerr << "***** Negative reward for collision" << std::endl;
        } else {
            x = xPrime;
            y = yPrime;
 
            updateStateVector();
-           reward = REWARD_FAILURE;  
+           reward = NEGATIVE_REWARD_EXTRA_STEP;  
        }
    } 
 
@@ -150,7 +151,7 @@ float ContinuousRooms::apply(int action)
        }
 
        updateStateVector();
-       reward = REWARD_FAILURE;  
+       reward = NEGATIVE_REWARD_EXTRA_STEP;  
    }
 
    if (action == LEFT) {
@@ -160,11 +161,12 @@ float ContinuousRooms::apply(int action)
        }
 
        updateStateVector();
-       reward = REWARD_FAILURE;  
+       reward = NEGATIVE_REWARD_EXTRA_STEP;  
    }
 
    if (detectMinima()) {
-       reward = REWARD_FAILURE_MINIMA; 
+       std::cerr << "***** Negative reward for minima" << std::endl;
+       reward = NEGATIVE_REWARD_MINIMA;
    }
 
    return reward;
@@ -211,6 +213,6 @@ void ContinuousRooms::getMinMaxFeatures(std::vector<float> *minFeat,
 
 void ContinuousRooms::getMinMaxReward(float *minR, float *maxR)
 {
-    *minR = REWARD_FAILURE;
+    *minR = NEGATIVE_REWARD_EXTRA_STEP;
     *maxR = REWARD_SUCCESS;
 }

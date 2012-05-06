@@ -30,13 +30,14 @@ int LinearQ0Learner::getBestAction(const Eigen::VectorXd& phi)
        }
     }
 
-    std::cout << "Best action is " << maxAction << " with value " << maxValue << std::endl;
+    //std::cout << "Best action is " << maxAction << " with value " << maxValue << std::endl;
     return maxAction;
 }
 
 int LinearQ0Learner::epsilonGreedy(const Eigen::VectorXd& phi)
 {
     lastAction  = (rng.uniform() < epsilon) ? rng.uniformDiscrete(0, numActions-1) : getBestAction(phi); 
+
     lastPhi = phi;
     return lastAction;
 }
@@ -60,6 +61,7 @@ int LinearQ0Learner::next_action(float reward, const std::vector<float> &s)
 
 void LinearQ0Learner::last_action(float reward)
 {
+    std::cerr << "**************************************************** EXECUTING LAST ACTION" << std::endl;
     actionValueThetas[lastAction] = actionValueThetas[lastAction].array() + lastPhi.array()*(reward - actionValueThetas[lastAction].dot(lastPhi))*alpha;
 }
 

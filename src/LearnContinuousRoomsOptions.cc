@@ -80,18 +80,16 @@ struct ReachNearestColorRewardDecorator : public rl::RewardDecorator
     ReachNearestColorRewardDecorator(Agent& agent, int targetColor) : 
         rl::RewardDecorator(agent), 
         targetColor(targetColor) {};
-
     int targetColor;
-    static const double REWARD_SUCCESS = 1;
-    static const double REWARD_FAILURE = -0.1;
 
     double pseudoReward(float reward, const std::vector<float> &s)
     {
+        // Override goal 
         if (s[targetColor]) { 
-            return REWARD_SUCCESS;
-        } else {
-            return REWARD_FAILURE;
-        }    
+            return ContinuousRooms::REWARD_SUCCESS;
+        } 
+
+        return reward;
     }
 
     bool terminal(const std::vector<float> &s)
@@ -127,7 +125,7 @@ room_abstraction stateAbstraction(U, C, 20);
 // the subgoals defined by the pseudo-reward functions
 std::vector<rl::RewardDecorator*> agents;
 for (int color = 0; color < ContinuousRooms::NUM_COLORS; color++) {
-    agents.push_back(new ReachNearestColorRewardDecorator(*(new rl::LinearQ0Learner(ContinuousRooms::NUM_ACTIONS, 5e-4, 0.1, 0.6, stateAbstraction)), color));
+    agents.push_back(new ReachNearestColorRewardDecorator(*(new rl::LinearQ0Learner(ContinuousRooms::NUM_ACTIONS, 5e-4, 0.1, 0.9, stateAbstraction)), color));
 }
 
 // We use a virtual world of 200x200 units with a 10 units wide robot
@@ -135,6 +133,7 @@ const double robotRadius = 5;
 ContinuousRooms env("map.png", robotRadius, true);
 
 cv::Mat img = cv::imread("map.png");
+cv::Mat imgBot = img.clone();
 
 // Train a separate agent for each option and take the resulting policy
 const unsigned numberLearningEpisodes = 100; 
@@ -148,23 +147,23 @@ for (auto itAgent = agents.begin(); itAgent != agents.end(); itAgent++) {
         auto s = env.sensation();
         auto reward = env.apply((*itAgent)->first_action(s));
 
-            std::cout << "Terminal in environment" << env.terminal() << std::endl;
-            std::cout << "Terminal in agent " << (*itAgent)->terminal(s) << std::endl;
         while (!(*itAgent)->terminal(s) && env.terminal() == false) {
             s = env.sensation();
             reward = env.apply((*itAgent)->next_action(reward, s));
 
-            std::cout << "Reward " << reward << std::endl;
-            cv::circle(img, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
-            cv::imshow("world", img); 
+            //std::cout << "Reward " << reward << std::endl;
+            cv::circle(imgBot, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
+            cv::imshow("world", imgBot); 
 
-            if(cv::waitKey(30) >= 0) break;
-            sleep(0.25);
+            if(cv::waitKey(10) >= 0) break;
+            sleep(0.125);
         }
     
         s = env.sensation();
         (*itAgent)->last_action(reward);
         env.reset();
+
+        imgBot = img.clone();
     }
     agentIdx += 1;
 }

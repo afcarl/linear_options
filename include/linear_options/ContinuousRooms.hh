@@ -9,15 +9,20 @@ struct ContinuousRooms : public Environment
   ContinuousRooms(const std::string& map, double robotRadius, bool randomizeInitialPosition = false, double safetyMargin = 0, Random rng = Random());
    
   enum PRIMITIVE_ACTIONS { FORWARD, LEFT, RIGHT, NUM_ACTIONS };
+
   enum ROOM_COLORS { GREEN, BLUE, PURPLE, YELLOW, NUM_COLORS };
 
-  static const double REWARD_FAILURE = -0.01;
 
-  static const double REWARD_FAILURE_MINIMA = -1.0;
+  static const double NEGATIVE_REWARD_EXTRA_STEP = -0.01;
+
+  static const double NEGATIVE_REWARD_COLLISION = -0.1;
+
+  static const double NEGATIVE_REWARD_MINIMA = -1.0;
 
   static const double REWARD_SUCCESS = 1.0;
 
-  static const double MAX_NUMBER_STEPS = 100; 
+
+  static const double MAX_NUMBER_STEPS = 200; 
 
   static const double MIN_DISPLACEMENT = 1.0;
 
