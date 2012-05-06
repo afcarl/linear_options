@@ -13,7 +13,13 @@ struct ContinuousRooms : public Environment
 
   static const double REWARD_FAILURE = -0.01;
 
+  static const double REWARD_FAILURE_MINIMA = -1.0;
+
   static const double REWARD_SUCCESS = 1.0;
+
+  static const double MAX_NUMBER_STEPS = 100; 
+
+  static const double MIN_DISPLACEMENT = 1.0;
 
   /**
    * @Override
@@ -52,7 +58,7 @@ struct ContinuousRooms : public Environment
   virtual void getMinMaxReward(float *minR, float *maxR);
 
     // RGB image corresponding to the layout of the world
-    // FIXME
+    // FIXME make private
     cv::Mat map;
 protected:
    /**
@@ -75,11 +81,22 @@ private:
      */
     void getCircularROI(int R, std::vector<int>& circularROI);
 
+    /**
+     * Fill the internal state vector with the relevant state information
+     */
     void updateStateVector();
+
+    /**
+     * @return true if the robot has been stuck in the
+     * same location for a given number of steps 
+     */
+    bool detectMinima();
 
     // Current pose
     double x;
+    double lastX;
     double y;
+    double lastY;
     double psi;
 
     bool terminated;
@@ -89,6 +106,8 @@ private:
     Random rng;
 
     std::vector<float> currentState;
+
+    unsigned minimaSteps;
 };
 
 #endif

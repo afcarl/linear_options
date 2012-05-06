@@ -7,7 +7,8 @@ ContinuousRooms::ContinuousRooms(const std::string& filename, double robotRadius
     robotRadius(robotRadius),
     randomPosition(randomizeInitialPosition),
     safetyMargin(safety),
-    rng(rng)
+    rng(rng),
+    minimaSteps(0)
 {
     getCircularROI(robotRadius + safetyMargin, circularROI);
     reset();
@@ -88,8 +89,28 @@ bool ContinuousRooms::isCollisionFree(double xPrime, double yPrime)
    return true;
 }
 
+bool ContinuousRooms::detectMinima()
+{
+    if (minimaSteps > MAX_NUMBER_STEPS) {
+        std::cout << "**** Max number of steps reached" << std::endl;
+        terminated = true;
+        return true;
+    }
+
+    if (std::sqrt(std::pow(x - lastX, 2) + std::pow(y - lastY, 2)) < MIN_DISPLACEMENT) {
+        minimaSteps += 1;
+    } else {
+        minimaSteps = 0;
+    } 
+
+    return false;
+}
+
 float ContinuousRooms::apply(int action)
 {
+   lastX = x;
+   lastY = y;
+
    // Check if we have reached the goal 
    // by entering the bottom right corner yellow room 
    if ((x > map.size().width/2.0 && y > map.size().height/2.0) 
@@ -98,9 +119,11 @@ float ContinuousRooms::apply(int action)
                map.at<cv::Vec3b>(y, x)[0] == 0)) {
        terminated = true;
        updateStateVector();
+       std::cout << "**** The global goal for the environment was reached" << std::endl;
        return REWARD_SUCCESS;
    } 
 
+   double reward = REWARD_FAILURE;
    if (action == FORWARD) {
        // Moves 1 unit forward in the current orientation
        // with zero mean Gaussian noise with 0.1 std deviation
@@ -108,18 +131,18 @@ float ContinuousRooms::apply(int action)
        double yPrime = y + std::sin(psi) + rng.normal(0.0, 0.1); 
 
        if (!isCollisionFree(xPrime, yPrime)) {
-           return REWARD_FAILURE;
+           reward = REWARD_FAILURE;
+       } else {
+           x = xPrime;
+           y = yPrime;
+
+           updateStateVector();
+           reward = REWARD_FAILURE;  
        }
-
-       x = xPrime;
-       y = yPrime;
-
-       updateStateVector();
-       return REWARD_FAILURE;  
    } 
 
-   // The left and right actions turn the robot 30 degrees
-   // in the specified direction 
+   // The left and right actions turn the robot
+   // 30 degrees in the specified direction 
    if (action == RIGHT) {
        psi += M_PI/6.0; 
        if (psi == 2.0*M_PI) {
@@ -127,7 +150,7 @@ float ContinuousRooms::apply(int action)
        }
 
        updateStateVector();
-       return REWARD_FAILURE;  
+       reward = REWARD_FAILURE;  
    }
 
    if (action == LEFT) {
@@ -137,11 +160,14 @@ float ContinuousRooms::apply(int action)
        }
 
        updateStateVector();
-       return REWARD_FAILURE;  
+       reward = REWARD_FAILURE;  
    }
 
+   if (detectMinima()) {
+       reward = REWARD_FAILURE_MINIMA; 
+   }
 
-   return REWARD_FAILURE;   
+   return reward;
 }
 
 bool ContinuousRooms::terminal() const
@@ -164,9 +190,12 @@ void ContinuousRooms::reset()
     }
 
     x = xInit; 
+    lastX = x;
     y = yInit; 
+    lastY = y;
 
     psi = M_PI/2.0;
+    minimaSteps = 0;
 }
 
 int ContinuousRooms::getNumActions()

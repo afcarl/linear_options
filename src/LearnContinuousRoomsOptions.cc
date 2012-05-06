@@ -137,26 +137,36 @@ ContinuousRooms env("map.png", robotRadius, true);
 cv::Mat img = cv::imread("map.png");
 
 // Train a separate agent for each option and take the resulting policy
+const unsigned numberLearningEpisodes = 100; 
+unsigned agentIdx = 0;
 for (auto itAgent = agents.begin(); itAgent != agents.end(); itAgent++) {
-    auto s = env.sensation();
-    auto reward = env.apply((*itAgent)->first_action(s));
+    for (unsigned i = 0; i < numberLearningEpisodes; i++) {
+        std::cout << "---------------------------------------------" << std::endl;
+        std::cout << "Agent " << agentIdx << " Episode " << i << std::endl;
+        std::cout << "---------------------------------------------" << std::endl;
 
-    while (!(*itAgent)->terminal(s)) {
+        auto s = env.sensation();
+        auto reward = env.apply((*itAgent)->first_action(s));
+
+            std::cout << "Terminal in environment" << env.terminal() << std::endl;
+            std::cout << "Terminal in agent " << (*itAgent)->terminal(s) << std::endl;
+        while (!(*itAgent)->terminal(s) && env.terminal() == false) {
+            s = env.sensation();
+            reward = env.apply((*itAgent)->next_action(reward, s));
+
+            std::cout << "Reward " << reward << std::endl;
+            cv::circle(img, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
+            cv::imshow("world", img); 
+
+            if(cv::waitKey(30) >= 0) break;
+            sleep(0.25);
+        }
+    
         s = env.sensation();
-        reward = env.apply((*itAgent)->next_action(reward, s));
-
-        std::cout << "Reward " << reward << std::endl;
-        cv::circle(img, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
-        cv::imshow("world", img); 
-
-        if(cv::waitKey(30) >= 0) break;
-        sleep(0.25);
+        (*itAgent)->last_action(reward);
+        env.reset();
     }
-
-    s = env.sensation();
-    (*itAgent)->last_action(reward);
-
-    env.reset();
+    agentIdx += 1;
 }
 
 return 0;
