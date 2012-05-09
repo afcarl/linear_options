@@ -17,6 +17,8 @@ public:
     RewardDecorator(Agent& agent) : agent(&agent) {};
     virtual ~RewardDecorator() {};
 
+    Agent* getAgent() { return agent; };
+
     /**
      * @Override
      */
@@ -52,7 +54,7 @@ public:
      * @param s The current state
      */ 
     virtual bool terminal(const std::vector<float>& s) = 0;
-
+    
 private:
     Agent* agent;
 };

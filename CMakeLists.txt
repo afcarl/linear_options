@@ -49,13 +49,18 @@ rosbuild_add_library(linearoptionlib
 rosbuild_add_executable(run_experiment
   src/ContinuousRoomsExperiment.cc
 )
-
 target_link_libraries(run_experiment linearoptionlib ${OpenCV_LIBS})
 rosbuild_link_boost(run_experiment serialization)
 
 rosbuild_add_executable(learn_options
   src/LearnContinuousRoomsOptions.cc
 )
-
 target_link_libraries(learn_options linearoptionlib ${OpenCV_LIBS})
 rosbuild_link_boost(learn_options serialization)
+
+
+rosbuild_add_executable(test_policy_serialization
+  src/TestSaveLoadPolicy.cc
+)
+target_link_libraries(test_policy_serialization linearoptionlib ${OpenCV_LIBS})
+rosbuild_link_boost(test_policy_serialization serialization)

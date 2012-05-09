@@ -5,6 +5,11 @@
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+
+#include <sstream>
+#include <fstream>
+#include <string>
+
 /**
  * We build the feature vector from a set of radial basis functions
  * spread over the space in the x, y and psi dimensions. 
@@ -136,35 +141,59 @@ cv::Mat img = cv::imread("map.png");
 cv::Mat imgBot = img.clone();
 
 // Train a separate agent for each option and take the resulting policy
-const unsigned numberLearningEpisodes = 100; 
+const unsigned numberLearningEpisodes = 1e5; 
 unsigned agentIdx = 0;
 for (auto itAgent = agents.begin(); itAgent != agents.end(); itAgent++) {
+    // Keep track of the cumulative number of completed episodes
+    // and also the number of steps per epsiodes
+    std::stringstream ss;
+    ss << "agent" << agentIdx; 
+    std::string filenamePrefix = ss.str();
+
+    std::ofstream statsFile(filenamePrefix + "_training.dat");
+
     for (unsigned i = 0; i < numberLearningEpisodes; i++) {
         std::cout << "---------------------------------------------" << std::endl;
         std::cout << "Agent " << agentIdx << " Episode " << i << std::endl;
         std::cout << "---------------------------------------------" << std::endl;
 
+        unsigned numberSteps = 2;
+        double totalReward = 0;
+
+        // Sense initial position and execute first action
         auto s = env.sensation();
         auto reward = env.apply((*itAgent)->first_action(s));
+        totalReward += reward;
 
+        // Main sense-act loop
         while (!(*itAgent)->terminal(s) && env.terminal() == false) {
             s = env.sensation();
             reward = env.apply((*itAgent)->next_action(reward, s));
 
-            //std::cout << "Reward " << reward << std::endl;
             cv::circle(imgBot, cv::Point(s[4], s[5]), 5, cv::Scalar(0, 0, 0), 1); 
             cv::imshow("world", imgBot); 
 
-            if(cv::waitKey(10) >= 0) break;
-            sleep(0.125);
+//if(cv::waitKey(10) >= 0) break;
+//            sleep(0.125);
+            numberSteps += 1;
+            totalReward += reward;
         }
-    
+   
+        // Integrate the last reward returned in a terminal state 
         s = env.sensation();
         (*itAgent)->last_action(reward);
-        env.reset();
+        totalReward += reward;
 
+        env.reset();
         imgBot = img.clone();
+
+        // Record statistics
+        statsFile << (reward > 0) << " " << numberSteps << " " << totalReward << std::endl; 
     }
+
+    // Save policy to file
+    ((rl::LinearQ0Learner*)(*itAgent)->getAgent())->savePolicy(filenamePrefix + "_options.rl");
+
     agentIdx += 1;
 }
 
